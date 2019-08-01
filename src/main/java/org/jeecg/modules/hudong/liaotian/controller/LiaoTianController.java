@@ -31,6 +31,7 @@ import org.jeecgframework.poi.excel.entity.ExportParams;
 import org.jeecgframework.poi.excel.entity.ImportParams;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 
+import org.jeecgframework.poi.excel.view.JeecgTemplateExcelView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -249,7 +250,7 @@ public class LiaoTianController {
         }
 
         //Step.2 AutoPoi 导出Excel
-        ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
+        ModelAndView mv = new ModelAndView(new JeecgTemplateExcelView());
         List<LiaoTian> pageList = liaoTianService.list(queryWrapper);
         //导出文件名称
         mv.addObject(NormalExcelConstants.FILE_NAME, "聊天列表");

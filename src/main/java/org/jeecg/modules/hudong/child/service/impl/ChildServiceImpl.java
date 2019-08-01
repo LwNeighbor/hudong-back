@@ -3,6 +3,7 @@ package org.jeecg.modules.hudong.child.service.impl;
 import org.jeecg.modules.hudong.child.entity.Child;
 import org.jeecg.modules.hudong.child.mapper.ChildMapper;
 import org.jeecg.modules.hudong.child.service.IChildService;
+import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,5 +29,8 @@ public class ChildServiceImpl extends ServiceImpl<ChildMapper, Child> implements
         return childMapper.selectMsChild(xxOpion,week);
     }
 
-
+    @Override
+    public List<Map<String, String>> selectMsgAndChild(String userid) {
+        return childMapper.selectMsgAndChild(userid);
+    }
 }

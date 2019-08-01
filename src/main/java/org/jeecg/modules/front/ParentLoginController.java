@@ -245,7 +245,6 @@ public class ParentLoginController extends BaseController {
     @ApiOperation("将语音消息标记为已读")
     public Result<JSONObject> readCount(@RequestHeader("token") String token) {
 
-
         Result<JSONObject> result = new Result<JSONObject>();
 
         try {

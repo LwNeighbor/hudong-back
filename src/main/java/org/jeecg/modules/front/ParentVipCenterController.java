@@ -204,7 +204,26 @@ public class ParentVipCenterController extends BaseController {
         try {
             Parent user = verify(token);
             if (user != null) {
-                List<Child> ptList = childService.list(new QueryWrapper<Child>().eq("pt_id", user.getId()));
+
+                List<Map<String,String>> ptList = new ArrayList<>();
+
+                List<Map<String,String>> list = childService.selectMsgAndChild(user.getId());
+                list.stream().forEach(map -> {
+                    Map map1 = new HashMap();
+
+                    map1.put("count",map.get("count"));
+                    map1.put("id",map.get("id"));
+                    map1.put("ptId",map.get("ptId"));
+                    map1.put("cdName",map.get("cdName"));
+                    map1.put("cdBirthday",map.get("cdBirthday"));
+                    map1.put("cdSex",map.get("cdSex"));
+                    map1.put("cdPhone",map.get("cdPhone"));
+                    map1.put("cdPassword",map.get("cdPassword"));
+
+                    ptList.add(map1);
+
+                });
+
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("data",ptList);
                 result.setResult(jsonObject);

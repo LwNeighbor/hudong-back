@@ -2,6 +2,7 @@ package org.jeecg.modules.hudong.child.service;
 
 import org.jeecg.modules.hudong.child.entity.Child;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.hudong.parent.entity.Parent;
 
 import java.util.List;
 import java.util.Map;
@@ -16,4 +17,5 @@ public interface IChildService extends IService<Child> {
 
     List<Map<String,String>> selectMsChild(String xxOpion, int week);
 
+    List<Map<String, String>> selectMsgAndChild(String userid);
 }
