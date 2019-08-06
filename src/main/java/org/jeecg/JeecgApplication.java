@@ -19,19 +19,19 @@ public class JeecgApplication {
     	SpringApplication.run(JeecgApplication.class, args);
     }
 
-   /* @Bean
+    @Bean
     MultipartConfigElement multipartConfigElement() {
         MultipartConfigFactory factory = new MultipartConfigFactory();
         factory.setLocation("/home/tmp");
         return factory.createMultipartConfig();
-    }*/
+    }
 
-    @Bean
+    /*@Bean
     MultipartConfigElement multipartConfigElement() {
         MultipartConfigFactory factory = new MultipartConfigFactory();
         factory.setLocation("D://tmp");
         return factory.createMultipartConfig();
-    }
+    }*/
 
 
 

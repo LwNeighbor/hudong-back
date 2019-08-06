@@ -1,4 +1,4 @@
-package org.jeecg.modules.hudong.msm.entity;
+package org.jeecg.modules.hudong.xtzc.entity;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,29 +11,19 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.jeecgframework.poi.excel.annotation.Excel;
 
 /**
- * @Description: 模式描述
+ * @Description: 注册后第几天的固定内容发送
  * @author： jeecg-boot
- * @date：   2019-06-20
+ * @date：   2019-08-02
  * @version： V1.0
  */
 @Data
-@TableName("hd_ms_miaoshu")
-public class Msm implements Serializable {
+@TableName("hd_xt_zc")
+public class Xtzc implements Serializable {
     private static final long serialVersionUID = 1L;
     
-	/**分类id*/
-	@Excel(name = "分类id", width = 32)
-	private java.lang.String flId;
-	/**描述ID*/
-	@Excel(name = "描述ID", width = 15)
+	/**学习记录ID*/
 	@TableId(type = IdType.UUID)
 	private java.lang.String id;
-	/**描述名称*/
-	@Excel(name = "描述名称", width = 15)
-	private java.lang.String msName;
-	/**描述归属编号*/
-	@Excel(name = "描述归属编号", width = 15)
-	private java.lang.String msBNo;
 	/**创建人*/
 	@Excel(name = "创建人", width = 15)
 	private java.lang.String createBy;
@@ -50,4 +40,19 @@ public class Msm implements Serializable {
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
 	private java.util.Date updateTime;
+	/**注册后的天数*/
+	@Excel(name = "注册后的天数", width = 15)
+	private java.lang.String psTime;
+	/**消息标题*/
+	@Excel(name = "消息标题", width = 15)
+	private java.lang.String title;
+	/**消息简介*/
+	@Excel(name = "消息简介", width = 15)
+	private java.lang.String introduce;
+	/**消息内容*/
+	@Excel(name = "消息内容", width = 15)
+	private java.lang.Object content;
+	/**具体发送时间*/
+	@Excel(name = "具体发送时间", width = 15)
+	private java.lang.String sendTime;
 }

@@ -1,4 +1,4 @@
-package org.jeecg.modules.hudong.msfenlei.controller;
+package org.jeecg.modules.hudong.xthf.controller;
 
 import java.util.*;
 import java.io.IOException;
@@ -7,13 +7,16 @@ import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.alibaba.fastjson.JSONObject;
+import cn.hutool.json.JSONObject;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.util.oConvertUtils;
-import org.jeecg.modules.hudong.mqx.service.IMqXQingService;
 import org.jeecg.modules.hudong.msfenlei.entity.MsFenLi;
 import org.jeecg.modules.hudong.msfenlei.service.IMsFenLiService;
+import org.jeecg.modules.hudong.xk.entity.XueKe;
+import org.jeecg.modules.hudong.xk.service.IXueKeService;
+import org.jeecg.modules.hudong.xthf.entity.Xthf;
+import org.jeecg.modules.hudong.xthf.service.IXthfService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -35,37 +38,39 @@ import com.alibaba.fastjson.JSON;
 
  /**
  * @Title: Controller
- * @Description: 模式分类
+ * @Description: 学生OK回复的系统回复
  * @author： jeecg-boot
- * @date：   2019-06-21
+ * @date：   2019-08-02
  * @version： V1.0
  */
 @RestController
-@RequestMapping("/msfenlei/msFenLi")
+@RequestMapping("/xthf/xthf")
 @Slf4j
-public class MsFenLiController {
+public class XthfController {
+	@Autowired
+	private IXthfService xthfService;
 	@Autowired
 	private IMsFenLiService msFenLiService;
 	@Autowired
-	private IMqXQingService mqXQingService;
+	private IXueKeService xueKeService;
 	
 	/**
 	  * 分页列表查询
-	 * @param msFenLi
+	 * @param xthf
 	 * @param pageNo
 	 * @param pageSize
 	 * @param req
 	 * @return
 	 */
 	@GetMapping(value = "/list")
-	public Result<IPage<MsFenLi>> queryPageList(MsFenLi msFenLi,
+	public Result<IPage<Xthf>> queryPageList(Xthf xthf,
 									  @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
 									  @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
 									  HttpServletRequest req) {
-		Result<IPage<MsFenLi>> result = new Result<IPage<MsFenLi>>();
-		QueryWrapper<MsFenLi> queryWrapper = QueryGenerator.initQueryWrapper(msFenLi, req.getParameterMap());
-		Page<MsFenLi> page = new Page<MsFenLi>(pageNo, pageSize);
-		IPage<MsFenLi> pageList = msFenLiService.page(page, queryWrapper);
+		Result<IPage<Xthf>> result = new Result<IPage<Xthf>>();
+		QueryWrapper<Xthf> queryWrapper = QueryGenerator.initQueryWrapper(xthf, req.getParameterMap());
+		Page<Xthf> page = new Page<Xthf>(pageNo, pageSize);
+		IPage<Xthf> pageList = xthfService.page(page, queryWrapper);
 		result.setSuccess(true);
 		result.setResult(pageList);
 		return result;
@@ -73,14 +78,21 @@ public class MsFenLiController {
 	
 	/**
 	  *   添加
-	 * @param msFenLi
+	 * @param xthf
 	 * @return
 	 */
 	@PostMapping(value = "/add")
-	public Result<MsFenLi> add(@RequestBody MsFenLi msFenLi) {
-		Result<MsFenLi> result = new Result<MsFenLi>();
+	public Result<Xthf> add(@RequestBody Xthf xthf) {
+		Result<Xthf> result = new Result<Xthf>();
 		try {
-			msFenLiService.save(msFenLi);
+
+			String flId = xthf.getGrade();	//年级
+			MsFenLi fenLi = msFenLiService.getById(flId);
+			xthf.setGradeName(fenLi.getFlName());
+			String kemu = xthf.getKemu();
+			XueKe xueKe = xueKeService.getById(kemu);
+			xthf.setKemu(xueKe.getXkName());
+			xthfService.save(xthf);
 			result.success("添加成功！");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -92,23 +104,38 @@ public class MsFenLiController {
 	
 	/**
 	  *  编辑
-	 * @param msFenLi
+	 * @param xthf
 	 * @return
 	 */
 	@PutMapping(value = "/edit")
-	public Result<MsFenLi> edit(@RequestBody MsFenLi msFenLi) {
-		Result<MsFenLi> result = new Result<MsFenLi>();
-		MsFenLi msFenLiEntity = msFenLiService.getById(msFenLi.getId());
-		if(msFenLiEntity==null) {
+	public Result<Xthf> edit(@RequestBody Xthf xthf) {
+		Result<Xthf> result = new Result<Xthf>();
+		Xthf xthfEntity = xthfService.getById(xthf.getId());
+		if(xthfEntity==null) {
 			result.error500("未找到对应实体");
 		}else {
-			boolean ok = msFenLiService.updateById(msFenLi);
+			String flId = xthf.getGrade();	//年级
+			if(!flId.equals("-1")){
+				MsFenLi fenLi = msFenLiService.getById(flId);
+				xthf.setGrade(fenLi.getFlName());
+			}else {
+				xthf.setGrade(xthfEntity.getGrade());
+			}
+			String kemu = xthf.getKemu();
+			if(!kemu.equals("-1")){
+				XueKe xueKe = xueKeService.getById(kemu);
+				xthf.setKemu(xueKe.getXkName());
+			}else {
+				xthf.setKemu(xthfEntity.getKemu());
+			}
+
+			boolean ok = xthfService.updateById(xthf);
 			//TODO 返回false说明什么？
 			if(ok) {
 				result.success("修改成功!");
 			}
 		}
-		
+
 		return result;
 	}
 	
@@ -118,20 +145,13 @@ public class MsFenLiController {
 	 * @return
 	 */
 	@DeleteMapping(value = "/delete")
-	public Result<MsFenLi> delete(@RequestParam(name="id",required=true) String id) {
-		Result<MsFenLi> result = new Result<MsFenLi>();
-
-		QueryWrapper queryWrapper = new QueryWrapper();
-		queryWrapper.eq("fl_id",id);
-		int count = mqXQingService.count(queryWrapper);
-		if(count > 0){
-			result.error500("该分类下还有模式描述，无法删除");
-		}
-		MsFenLi msFenLi = msFenLiService.getById(id);
-		if(msFenLi==null) {
+	public Result<Xthf> delete(@RequestParam(name="id",required=true) String id) {
+		Result<Xthf> result = new Result<Xthf>();
+		Xthf xthf = xthfService.getById(id);
+		if(xthf==null) {
 			result.error500("未找到对应实体");
 		}else {
-			boolean ok = msFenLiService.removeById(id);
+			boolean ok = xthfService.removeById(id);
 			if(ok) {
 				result.success("删除成功!");
 			}
@@ -146,12 +166,12 @@ public class MsFenLiController {
 	 * @return
 	 */
 	@DeleteMapping(value = "/deleteBatch")
-	public Result<MsFenLi> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
-		Result<MsFenLi> result = new Result<MsFenLi>();
+	public Result<Xthf> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
+		Result<Xthf> result = new Result<Xthf>();
 		if(ids==null || "".equals(ids.trim())) {
 			result.error500("参数不识别！");
 		}else {
-			this.msFenLiService.removeByIds(Arrays.asList(ids.split(",")));
+			this.xthfService.removeByIds(Arrays.asList(ids.split(",")));
 			result.success("删除成功!");
 		}
 		return result;
@@ -163,13 +183,13 @@ public class MsFenLiController {
 	 * @return
 	 */
 	@GetMapping(value = "/queryById")
-	public Result<MsFenLi> queryById(@RequestParam(name="id",required=true) String id) {
-		Result<MsFenLi> result = new Result<MsFenLi>();
-		MsFenLi msFenLi = msFenLiService.getById(id);
-		if(msFenLi==null) {
+	public Result<Xthf> queryById(@RequestParam(name="id",required=true) String id) {
+		Result<Xthf> result = new Result<Xthf>();
+		Xthf xthf = xthfService.getById(id);
+		if(xthf==null) {
 			result.error500("未找到对应实体");
 		}else {
-			result.setResult(msFenLi);
+			result.setResult(xthf);
 			result.setSuccess(true);
 		}
 		return result;
@@ -184,13 +204,13 @@ public class MsFenLiController {
   @RequestMapping(value = "/exportXls")
   public ModelAndView exportXls(HttpServletRequest request, HttpServletResponse response) {
       // Step.1 组装查询条件
-      QueryWrapper<MsFenLi> queryWrapper = null;
+      QueryWrapper<Xthf> queryWrapper = null;
       try {
           String paramsStr = request.getParameter("paramsStr");
           if (oConvertUtils.isNotEmpty(paramsStr)) {
               String deString = URLDecoder.decode(paramsStr, "UTF-8");
-              MsFenLi msFenLi = JSON.parseObject(deString, MsFenLi.class);
-              queryWrapper = QueryGenerator.initQueryWrapper(msFenLi, request.getParameterMap());
+              Xthf xthf = JSON.parseObject(deString, Xthf.class);
+              queryWrapper = QueryGenerator.initQueryWrapper(xthf, request.getParameterMap());
           }
       } catch (UnsupportedEncodingException e) {
           e.printStackTrace();
@@ -198,11 +218,11 @@ public class MsFenLiController {
 
       //Step.2 AutoPoi 导出Excel
       ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
-      List<MsFenLi> pageList = msFenLiService.list(queryWrapper);
+      List<Xthf> pageList = xthfService.list(queryWrapper);
       //导出文件名称
-      mv.addObject(NormalExcelConstants.FILE_NAME, "模式分类列表");
-      mv.addObject(NormalExcelConstants.CLASS, MsFenLi.class);
-      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("模式分类列表数据", "导出人:Jeecg", "导出信息"));
+      mv.addObject(NormalExcelConstants.FILE_NAME, "学生OK回复的系统回复列表");
+      mv.addObject(NormalExcelConstants.CLASS, Xthf.class);
+      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("学生OK回复的系统回复列表数据", "导出人:Jeecg", "导出信息"));
       mv.addObject(NormalExcelConstants.DATA_LIST, pageList);
       return mv;
   }
@@ -225,11 +245,11 @@ public class MsFenLiController {
           params.setHeadRows(1);
           params.setNeedSave(true);
           try {
-              List<MsFenLi> listMsFenLis = ExcelImportUtil.importExcel(file.getInputStream(), MsFenLi.class, params);
-              for (MsFenLi msFenLiExcel : listMsFenLis) {
-                  msFenLiService.save(msFenLiExcel);
+              List<Xthf> listXthfs = ExcelImportUtil.importExcel(file.getInputStream(), Xthf.class, params);
+              for (Xthf xthfExcel : listXthfs) {
+                  xthfService.save(xthfExcel);
               }
-              return Result.ok("文件导入成功！数据行数：" + listMsFenLis.size());
+              return Result.ok("文件导入成功！数据行数：" + listXthfs.size());
           } catch (Exception e) {
               log.error(e.getMessage());
               return Result.error("文件导入失败！");
@@ -244,53 +264,41 @@ public class MsFenLiController {
       return Result.ok("文件导入失败！");
   }
 
+
 	 /**
 	  * 模式描述中的下拉框需要显示的
 	  * @param
 	  * @param req
 	  * @return
 	  */
-	 @GetMapping(value = "/valueList")
+	 @GetMapping(value = "/nflist")
 	 public Result<List<Map<String,String>>> valueList(HttpServletRequest req) {
 		 Result<List<Map<String,String>>> result = new Result<List<Map<String,String>>>();
 		 List<MsFenLi> list = msFenLiService.list();
 		 List<Map<String,String>> list1 = new ArrayList<>();
 		 if(list.size() > 0){
-		 	list.stream().forEach(msfenli->{
-		 		Map map = new HashMap();
-		 		map.put("value",msfenli.getId());
-		 		map.put("text",msfenli.getFlName());
-		 		list1.add(map);
-			});
+		 	for(MsFenLi msfenli : list) {
+				Map map = new HashMap();
+				map.put("value", msfenli.getId());
+				map.put("label", msfenli.getFlName());
+				List<XueKe> xklist2 = xueKeService.list(new QueryWrapper<XueKe>().eq("fl_id", msfenli.getId()));
+				List<Map<String, String>> list2 = new ArrayList<>();
+				if (xklist2.size() > 0) {
+					xklist2.stream().forEach(xueKe -> {
+						Map map1 = new HashMap();
+						map1.put("value", xueKe.getId());
+						map1.put("label", xueKe.getXkName());
+						list2.add(map1);
+					});
+					map.put("children", list2);
+
+					list1.add(map);
+				}
+
+			}
 		 }
 		 result.setSuccess(true);
 		 result.setResult(list1);
-		 return result;
-	 }
-
-
-	 /**
-	  * 孩子选择模式,级联选择
-	  *
-	  * @param
-	  * @param
-	  * @return
-	  */
-	 @GetMapping(value = "/msListUrl")
-	 public Result<Object> msListUrl() {
-		 Result<Object> result = new Result<Object>();
-		 JSONObject jsonObject = new JSONObject();
-		 List<Map<String, Object>> zlist = new ArrayList<>();
-		 List<MsFenLi> list = msFenLiService.list();
-		 for (MsFenLi msFenLi : list) {
-			 Map map = new HashMap();
-			 map.put("value", msFenLi.getId());
-			 map.put("label", msFenLi.getFlName());
-			 zlist.add(map);
-		 }
-		 jsonObject.put("options",zlist);
-		 result.setSuccess(true);
-		 result.setResult(jsonObject);
 		 return result;
 	 }
 

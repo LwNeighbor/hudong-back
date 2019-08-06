@@ -14,6 +14,5 @@ import java.util.Map;
  */
 public interface IMqXQingService extends IService<MqXQing> {
 
-    //查询该家长孩子的未读系统消息
-    List<Map<String,String>> selectXtMsg(String format, String token);
+    List<MqXQing> getListByChildAndKc(String day, String kmName, String flId);
 }

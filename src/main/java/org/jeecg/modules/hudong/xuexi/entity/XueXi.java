@@ -26,9 +26,6 @@ public class XueXi implements Serializable {
 	@Excel(name = "学习记录ID", width = 32)
 	@TableId(type = IdType.UUID)
 	private java.lang.String id;
-	/**描述详情ID*/
-	@Excel(name = "描述详情ID", width = 15)
-	private java.lang.String xxMqId;
 	/**消息所属父母ID*/
 	@Excel(name = "消息所属父母ID", width = 15)
 	private java.lang.String xxParentId;

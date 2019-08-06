@@ -13,6 +13,8 @@ import org.jeecg.modules.hudong.liaotian.entity.LiaoTian;
 import org.jeecg.modules.hudong.liaotian.service.ILiaoTianService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.jeecg.modules.hudong.parent.service.IParentService;
+import org.jeecg.modules.hudong.xthf.entity.Xthf;
+import org.jeecg.modules.hudong.xthf.service.IXthfService;
 import org.jeecg.modules.hudong.xuexi.entity.XueXi;
 import org.jeecg.modules.hudong.xuexi.service.IXueXiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,8 @@ public class FrontChildController extends BaseController {
     private ILiaoTianService liaoTianService;
     @Autowired
     private IParentService parentService;
+    @Autowired
+    private IXthfService xthfService;
 
 
     /**
@@ -132,6 +136,7 @@ public class FrontChildController extends BaseController {
                                         @RequestParam(value = "time",required = false) String time) {
 
         XueXi xue = new XueXi();
+        XueXi xueXi = null;
         String realContent = "-1";
         Result<JSONObject> result = new Result<JSONObject>();
         try {
@@ -154,6 +159,35 @@ public class FrontChildController extends BaseController {
                 //XT/系统,HZ/孩子,JZ/家长
                 xue.setXxContent(content);
                 realContent = content;
+                //孩子发送OK消息,需要系统回复一个消息
+                long day = DateUtil.betweenDay(new Date(), child.getCreateTime(), true);    //孩子注册的第几天
+
+                List<Xthf> list = xthfService.list(new QueryWrapper<Xthf>().
+                        eq("ps_time", day).
+                        eq("kemu", xxOpions[1]).
+                        eq("grade", child.getFlId())
+                );
+
+                if(list.size() > 0){
+
+                    Xthf xthf = list.get(0);
+
+                    xueXi = new XueXi();
+                    xueXi.setTxType("0");   //提醒方式
+                    xueXi.setChPhone(child.getCdPhone());
+                    xueXi.setChName(child.getCdName());
+                    xueXi.setPtPhone(user.getPtPhone());
+                    xueXi.setPtName(user.getPtName());
+                    xueXi.setXxKemu(xxOpions[1]);
+                    xueXi.setXxOpion(xxOpions[0]);
+                    xueXi.setXxContent(String.valueOf(xthf.getContent()));
+                    xueXi.setXxYtype("WZ");
+                    xueXi.setXxVtype("XT");
+                    xueXi.setXxChildId(child.getId());
+                    xueXi.setXxParentId(user.getId());
+
+                }
+
             } else if (type.equalsIgnoreCase("YY")) {
                 String upload = uploadYY(request, response);
                 xue.setXxContent("sys/common/view/"+ upload);
@@ -172,7 +206,11 @@ public class FrontChildController extends BaseController {
                 realContent = "sys/common/view/"+ upload;
             }
 
-            xueXiService.save(xue);
+            if(xueXiService.save(xue)){
+                Thread.sleep(1000);
+                xueXiService.save(xueXi);
+            }
+
             JSONObject jsonObject = new JSONObject();
 
             jsonObject.put("content", realContent);

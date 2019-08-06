@@ -29,12 +29,31 @@ public class Kc implements Serializable {
 	/**孩子姓名*/
 	@Excel(name = "孩子姓名", width = 15)
 	private String name;
+	/**孩子手机号*/
+	private String phone;
 	/**科目名称*/
 	@Excel(name = "科目名称", width = 15)
 	private String kmName;
+
+	/**分类,年级名称*/
+	private String flName;
+	/**分类/年级ID*/
+	private String flId;
+
+	/**星期*/
+	@Excel(name = "星期", width = 15)
+	private String weekday;
 	/**上课时间*/
-	@Excel(name = "上课时间", width = 15,format = "yyyy-MM-dd")
+	@Excel(name = "上课时间", width = 15)
 	private String startTime;
+
+	/**下班时间*/
+	@Excel(name = "下课时间", width = 15)
+	private String endTime;
+
+	/** 课表编号,将根据这个标号来确定下一节是什么课 */
+	private Integer number;
+
 	/**创建人*/
 	private String createBy;
 	/**创建时间*/

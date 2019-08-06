@@ -2,4 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.hudong.kc.mapper.KcMapper">
 
+    <select id="getClassByChild" parameterType="String" resultType="org.jeecg.modules.hudong.kc.entity.Kc">
+        select * from hd_kc where ch_id = #{childid} and weekday=#{week}
+        and sysdate() &gt;= CONCAT(#{date},start_time) and sysdate() &lt;= CONCAT(#{date},end_time)
+    </select>
+
+    <select id="listOrderByNumberAsc" parameterType="String" resultType="org.jeecg.modules.hudong.kc.entity.Kc">
+        select * from hd_kc where ch_id = #{childid} and weekday=#{week}
+        and sysdate() &lt; CONCAT(#{date},start_time) order by number asc
+    </select>
 </mapper>

@@ -31,10 +31,10 @@ public class Child implements Serializable {
 	private java.lang.String ptId;
 	/**模版描述ID* */
 	@Excel(name = "模版描述ID", width = 15)
-	private java.lang.String msId;
+	private java.lang.String flId;
 	/**模版描述内容,包括分类和描述* */
 	@Excel(name = "模版描述msName", width = 15)
-	private java.lang.String msName;
+	private java.lang.String flName;
 	/**孩子姓名*/
 	@Excel(name = "孩子姓名", width = 15)
 	private java.lang.String cdName;
@@ -58,16 +58,16 @@ public class Child implements Serializable {
 	@Excel(name = "创建人", width = 15)
 	private java.lang.String createBy;
 	/**创建时间*/
-	@Excel(name = "创建时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Excel(name = "创建时间", width = 20, format = "yyyy-MM-dd HH:mm")
+	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm")
 	private java.util.Date createTime;
 	/**更新人*/
 	@Excel(name = "更新人", width = 15)
 	private java.lang.String updateBy;
 	/**更新时间*/
-	@Excel(name = "更新时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+	@Excel(name = "更新时间", width = 20, format = "yyyy-MM-dd HH:mm")
+	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
 	private java.util.Date updateTime;
 }

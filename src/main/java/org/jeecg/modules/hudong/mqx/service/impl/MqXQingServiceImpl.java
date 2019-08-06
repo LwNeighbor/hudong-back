@@ -22,9 +22,9 @@ public class MqXQingServiceImpl extends ServiceImpl<MqXQingMapper, MqXQing> impl
 
     @Autowired
     private MqXQingMapper mqXQingMapper;
-    //该家长下未读的系统消息
+
     @Override
-    public List<Map<String,String>> selectXtMsg(String format, String token) {
-        return mqXQingMapper.selectXtMsg(format,token);
+    public List<MqXQing> getListByChildAndKc(String day, String kmName, String flId) {
+        return mqXQingMapper.getListByChildAndKc(day,kmName,flId);
     }
 }

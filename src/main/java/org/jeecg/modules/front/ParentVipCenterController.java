@@ -1,11 +1,13 @@
 package org.jeecg.modules.front;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.swagger.annotations.ApiOperation;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.constant.CommonConstant;
+import org.jeecg.common.util.FileUtils;
 import org.jeecg.common.util.RedisUtil;
 import org.jeecg.modules.hudong.aboutUs.entity.AboutUs;
 import org.jeecg.modules.hudong.aboutUs.service.IAboutUsService;
@@ -15,21 +17,41 @@ import org.jeecg.modules.hudong.customer.entity.Cusomter;
 import org.jeecg.modules.hudong.customer.service.ICusomterService;
 import org.jeecg.modules.hudong.feedback.entity.Feedback;
 import org.jeecg.modules.hudong.feedback.service.IFeedbackService;
+import org.jeecg.modules.hudong.kc.entity.Kc;
+import org.jeecg.modules.hudong.kc.service.IKcService;
+import org.jeecg.modules.hudong.msfenlei.entity.MsFenLi;
+import org.jeecg.modules.hudong.msfenlei.service.IMsFenLiService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.jeecg.modules.hudong.parent.service.IParentService;
 import org.jeecg.modules.hudong.qu.entity.Question;
 import org.jeecg.modules.hudong.qu.service.IQuestionService;
 import org.jeecg.modules.shiro.authc.util.JwtUtil;
+import org.jeecgframework.poi.excel.ExcelImportUtil;
+import org.jeecgframework.poi.excel.def.NormalExcelConstants;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.ImportParams;
+import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 
 @RestController
 @RequestMapping("/front/parent/vipCenter")
 public class ParentVipCenterController extends BaseController {
+
+
+    @Value(value = "${jeecg.path.upload}")
+    private String uploadpath;
 
     @Autowired
     private IParentService parentService;
@@ -45,6 +67,10 @@ public class ParentVipCenterController extends BaseController {
     private IFeedbackService feedbackService;
     @Autowired
     private ICusomterService cusomterService;
+    @Autowired
+    private IKcService kcService;
+    @Autowired
+    private IMsFenLiService fenLiService;
 
 
     @PostMapping(value = "")
@@ -69,6 +95,44 @@ public class ParentVipCenterController extends BaseController {
             result.error500("操作失败!");
             return result;
         }
+    }
+
+
+    /**
+     * 年级列表
+     * @param
+     * @param
+     * @return
+     */
+    @GetMapping(value = "/njList")
+    public Result<List<Map<String,String>>> valueList(@RequestHeader("token") String token) {
+        Result<List<Map<String,String>>> result = new Result<List<Map<String,String>>>();
+        try {
+            Parent user = verify(token);
+            if (user != null) {
+                List<MsFenLi> list = fenLiService.list();
+                List<Map<String,String>> list1 = new ArrayList<>();
+                if(list.size() > 0){
+                    list.stream().forEach(msfenli->{
+                        Map map = new HashMap();
+                        map.put("id",msfenli.getId());
+                        map.put("name",msfenli.getFlName());
+                        list1.add(map);
+                    });
+                }
+                result.setResult(list1);
+                result.success("操作成功");
+                return result;
+            } else {
+                //token失效,重新登陆
+                result.error9999();
+                return result;
+            }
+        } catch (Exception e) {
+            result.error500("操作失败!");
+            return result;
+        }
+
     }
 
 
@@ -260,6 +324,8 @@ public class ParentVipCenterController extends BaseController {
             @RequestParam("cdPassword") String cdPassword,
             @RequestParam("verify") String verify,
             @RequestParam("confirm") String confirm,
+            @RequestParam("njId") String flId,
+            @RequestParam("njName") String flName,
             @RequestHeader("token") String token) {
 
         Result<Object> result = new Result<Object>();
@@ -296,12 +362,14 @@ public class ParentVipCenterController extends BaseController {
                     child.setCdBirthday(cdBirthday);
                     child.setPtId(user.getId());
                     child.setChildAvater("/child.png");
+                    child.setFlId(flId);
+                    child.setFlName(flName);
                     childService.save(child);
                     result.success("操作成功");
                     return result;
                 } else {
                     //token失效,重新登陆
-                    result.error500("请先接受验证码");
+                    result.error500("验证码不正确");
                     return result;
                 }
             }else {
@@ -358,6 +426,35 @@ public class ParentVipCenterController extends BaseController {
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("data", name);
                 result.setResult(jsonObject);
+                result.success("操作成功");
+                return result;
+            } else {
+                //token失效,重新登陆
+                result.error9999();
+                return result;
+            }
+        } catch (Exception e) {
+            result.error500("操作失败!");
+            return result;
+        }
+    }
+
+
+    @PostMapping(value = "/updateNj")
+    @ApiOperation("修改孩子年级")
+    public Result<JSONObject> updateNj(@RequestParam("njId") String njId,
+                                       @RequestParam("njName") String njName,
+                                      @RequestParam("id") String id,
+                                      @RequestHeader("token") String token) {
+        Result<JSONObject> result = new Result<JSONObject>();
+        try {
+            Parent user = verify(token);
+            if (user != null) {
+                Child child = new Child();
+                child.setId(id);
+                child.setFlId(njId);
+                child.setFlName(njName);
+                childService.updateById(child);
                 result.success("操作成功");
                 return result;
             } else {
@@ -703,6 +800,119 @@ public class ParentVipCenterController extends BaseController {
             result.error500("操作失败");
         }
         return result;
+    }
+
+    /**
+     * 家长导入孩子课程表
+     *
+     * @param request
+     * @param response
+     */
+    @RequestMapping(value = "/exportKc")
+    public Result<Object> exportXls(HttpServletRequest request, HttpServletResponse response,
+                                  @RequestParam("childid") String childid) {
+
+
+        Result<Object> result = new Result<Object>();
+
+        try {
+            Child child = childService.getById(childid);
+            Parent parent = parentService.getById(child.getPtId());
+            kcService.remove(new QueryWrapper<Kc>().eq("ch_id",childid));
+            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+            Map<String, MultipartFile> fileMap = multipartRequest.getFileMap();
+            for (Map.Entry<String, MultipartFile> entity : fileMap.entrySet()) {
+                MultipartFile file = entity.getValue();// 获取上传文件对象
+                ImportParams params = new ImportParams();
+                params.setTitleRows(2);
+                params.setHeadRows(1);
+                params.setNeedSave(true);
+                try {
+                    List<Kc> listKcs = ExcelImportUtil.importExcel(file.getInputStream(), Kc.class, params);
+                    int week = 1;
+                    int i=0;
+                    for (Kc kcExcel : listKcs) {
+                        int kcWeel = (int) Double.parseDouble(kcExcel.getWeekday());
+                        if(kcWeel != week){
+                            week = kcWeel;
+                            i =0;
+                        }
+                        kcExcel.setNumber(i);
+                        kcExcel.setChId(childid);
+                        kcExcel.setPhone(child.getCdPhone());
+                        kcExcel.setFlId(child.getFlId());
+                        kcExcel.setFlName(child.getFlName());
+                        int weekday = kcWeel + 1;
+                        if(weekday == 8){
+                            weekday=1;
+                        }
+
+                        kcExcel.setWeekday(String.valueOf(weekday));
+                        kcService.save(kcExcel);
+                        i++;
+                    }
+                    result.success("操作成功");
+                    return result;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return Result.error("文件导入失败！");
+                } finally {
+                    try {
+                        file.getInputStream().close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.error500("文件导入失败");
+        }
+        return result;
+
+    }
+
+
+
+    /**
+     * 通用下载请求
+     *
+     */
+    @GetMapping("/downExcel")
+    public void fileDownload(@RequestParam("path") String path, HttpServletResponse response, HttpServletRequest request) {
+        try {
+            String filePath = uploadpath + "/" + path;
+
+            response.setCharacterEncoding("utf-8");
+            response.setContentType("multipart/form-data");
+            response.setHeader("Content-Disposition",
+                    "attachment;fileName=" + setFileDownloadHeader(request, path));
+            FileUtils.writeBytes(filePath, response.getOutputStream());
+        } catch (Exception e) {
+            System.out.println("文件下载失败");
+           e.printStackTrace();
+        }
+    }
+
+    public String setFileDownloadHeader(HttpServletRequest request, String fileName) throws UnsupportedEncodingException {
+        final String agent = request.getHeader("USER-AGENT");
+        String filename = fileName;
+        if (agent.contains("MSIE")) {
+            // IE浏览器
+            filename = URLEncoder.encode(filename, "utf-8");
+            filename = filename.replace("+", " ");
+        } else if (agent.contains("Firefox")) {
+            // 火狐浏览器
+            filename = new String(fileName.getBytes(), "ISO8859-1");
+        } else if (agent.contains("Chrome")) {
+            // google浏览器
+            filename = URLEncoder.encode(filename, "utf-8");
+        } else {
+            // 其它浏览器
+            filename = URLEncoder.encode(filename, "utf-8");
+        }
+        return filename;
     }
 
 

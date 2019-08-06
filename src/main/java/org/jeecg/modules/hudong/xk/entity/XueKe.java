@@ -28,6 +28,14 @@ public class XueKe implements Serializable {
 	/**学科名称*/
 	@Excel(name = "学科名称", width = 15)
 	private java.lang.String xkName;
+
+	/**分类ID*/
+	@Excel(name = "分类ID", width = 15)
+	private java.lang.String flId;
+	/**分类名称*/
+	@Excel(name = "分类名称", width = 15)
+	private java.lang.String flName;
+
 	/**创建人*/
 	@Excel(name = "创建人", width = 15)
 	private java.lang.String createBy;

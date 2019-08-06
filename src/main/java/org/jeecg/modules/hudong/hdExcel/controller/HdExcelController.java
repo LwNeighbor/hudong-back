@@ -1,15 +1,18 @@
 package org.jeecg.modules.hudong.hdExcel.controller;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import cn.hutool.json.JSONObject;
+import org.apache.commons.io.IOUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
+import org.jeecg.common.util.FileUtils;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.hudong.hdExcel.entity.HdExcel;
 import org.jeecg.modules.hudong.hdExcel.service.IHdExcelService;
@@ -27,6 +30,9 @@ import org.jeecgframework.poi.excel.entity.ImportParams;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -44,6 +50,8 @@ import com.alibaba.fastjson.JSON;
 @RequestMapping("/hdExcel/hdExcel")
 @Slf4j
 public class HdExcelController {
+	 @Value(value = "${jeecg.path.upload}")
+	 private String uploadpath;
 	@Autowired
 	private IHdExcelService hdExcelService;
 	
@@ -167,7 +175,7 @@ public class HdExcelController {
 	}
 
   /**
-      * 导出excel
+   * 导出课程表模版
    *
    * @param request
    * @param response
@@ -192,11 +200,49 @@ public class HdExcelController {
       List<HdExcel> pageList = hdExcelService.list(queryWrapper);
       //导出文件名称
       mv.addObject(NormalExcelConstants.FILE_NAME, "Excel模版管理列表");
-      mv.addObject(NormalExcelConstants.CLASS, HdExcel.class);
-      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("Excel模版管理列表数据", "导出人:Jeecg", "导出信息"));
-      mv.addObject(NormalExcelConstants.DATA_LIST, pageList);
+      mv.addObject(NormalExcelConstants.CLASS, Kc.class);
+      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("Excel模版管理列表数据", "导出人:雁飞留影", "导出信息"));
+      mv.addObject(NormalExcelConstants.DATA_LIST, new ArrayList<>());
       return mv;
   }
+
+	 /**
+	  * 上传模版文件
+	  *
+	  * @param request
+	  * @param response
+	  * @return
+	  */
+	 @RequestMapping("/uploadExcel")
+	 public Result<JSONObject> uploadExcel(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+	 	Result<JSONObject> result = new Result<>();
+		 String ctxPath = uploadpath;
+		 String fileName = null;
+		 String bizPath = "user";
+		 String nowday = new SimpleDateFormat("yyyyMMdd").format(new Date());
+		 File file = new File(ctxPath + File.separator + bizPath + File.separator + nowday);
+		 if (!file.exists()) {
+			 file.mkdirs();// 创建文件根目录
+		 }
+		 MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+		 MultipartFile mf = multipartRequest.getFile("file");// 获取上传文件对象
+		 String orgName = mf.getOriginalFilename();// 获取文件名
+		 fileName = orgName.substring(0, orgName.lastIndexOf(".")) + "_" + System.currentTimeMillis() + orgName.substring(orgName.indexOf("."));
+		 String savePath = file.getPath() + File.separator + fileName;
+		 File savefile = new File(savePath);
+		 FileCopyUtils.copy(mf.getBytes(), savefile);
+		 String dbpath = bizPath + File.separator + nowday + File.separator + fileName;
+		 if (dbpath.contains("\\")) {
+			 dbpath = dbpath.replace("\\", "/");
+		 }
+		 JSONObject jsonObject=  new JSONObject();
+		 jsonObject.put("path",dbpath);
+		 result.setResult(jsonObject);
+		 result.setSuccess(true);
+		 return result;
+	 }
+
 
   /**
       * 通过excel导入数据
@@ -237,34 +283,5 @@ public class HdExcelController {
 
 
 
-	 /**
-	  * 导出课程表模版
-	  *
-	  * @param request
-	  * @param response
-	  */
-	 @RequestMapping(value = "/exportXlsKc")
-	 public ModelAndView exportXlsKc(HttpServletRequest request, HttpServletResponse response) {
-		 // Step.1 组装查询条件
-		 QueryWrapper<Kc> queryWrapper = null;
-		 try {
-			 String paramsStr = request.getParameter("paramsStr");
-			 if (oConvertUtils.isNotEmpty(paramsStr)) {
-				 String deString = URLDecoder.decode(paramsStr, "UTF-8");
-				 Kc kc = JSON.parseObject(deString, Kc.class);
-				 queryWrapper = QueryGenerator.initQueryWrapper(kc, request.getParameterMap());
-			 }
-		 } catch (UnsupportedEncodingException e) {
-			 e.printStackTrace();
-		 }
-
-		 //Step.2 AutoPoi 导出Excel
-		 ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
-		 //导出文件名称
-		 mv.addObject(NormalExcelConstants.FILE_NAME, "课程表管理列表");
-		 mv.addObject(NormalExcelConstants.CLASS, Kc.class);
-		 mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("课程表管理列表数据", "导出人:雁飞留影", "导出信息"));
-		 return mv;
-	 }
 
 }

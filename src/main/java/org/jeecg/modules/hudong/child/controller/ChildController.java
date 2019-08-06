@@ -10,10 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.crypto.SecureUtil;
-import com.sun.mail.imap.protocol.ID;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
-import org.jeecg.common.util.MD5Util;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.hudong.child.entity.Child;
 import org.jeecg.modules.hudong.child.service.IChildService;
@@ -23,8 +21,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
-import org.jeecg.modules.hudong.mqx.entity.MqXQing;
-import org.jeecg.modules.hudong.msm.service.IMsmService;
+import org.jeecg.modules.hudong.msfenlei.entity.MsFenLi;
+import org.jeecg.modules.hudong.msfenlei.service.IMsFenLiService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.jeecg.modules.hudong.parent.service.IParentService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
@@ -56,7 +54,7 @@ public class ChildController {
 	@Autowired
 	private IParentService parentService;
 	@Autowired
-	private IMsmService msmService;
+	private IMsFenLiService fenLiService;
 	
 	/**
 	  * 分页列表查询
@@ -307,10 +305,10 @@ public class ChildController {
 	 public Result<Child> saveMsChild(@RequestBody Child child, HttpServletRequest req) {
 		 Result<Child> result = new Result<Child>();
 
-		 String msId = child.getMsId();
-		 Map<String,String>  map = msmService.findFlMsName(msId);
-		 String msName = map.get("flname")+"/"+map.get("msname");
-		 child.setMsName(msName);
+		 String flId = child.getFlId();
+		 MsFenLi fenLi = fenLiService.getById(flId);
+		 String flName = fenLi.getFlName();
+		 child.setFlName(flName);
 		 Child childEntity = childService.getById(child.getId());
 		 if(childEntity==null) {
 			 result.error500("未找到对应实体");

@@ -1,8 +1,6 @@
 package org.jeecg.modules.hudong.xk.controller;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -11,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.util.oConvertUtils;
+import org.jeecg.modules.hudong.msfenlei.entity.MsFenLi;
 import org.jeecg.modules.hudong.xk.entity.XueKe;
 import org.jeecg.modules.hudong.xk.service.IXueKeService;
 
@@ -67,6 +66,30 @@ public class XueKeController {
 		result.setResult(pageList);
 		return result;
 	}
+
+	 /**
+	  * 模式描述中的下拉框需要显示的
+	  * @param
+	  * @param req
+	  * @return
+	  */
+	 @PostMapping(value = "/valueList")
+	 public Result<List<Map<String,String>>> valueList(HttpServletRequest req,@RequestBody XueKe xueKe) {
+		 Result<List<Map<String,String>>> result = new Result<List<Map<String,String>>>();
+		 List<XueKe> xueKeList = xueKeService.list(new QueryWrapper<XueKe>().eq("fl_id", xueKe.getFlId()));
+		 List<Map<String,String>> list1 = new ArrayList<>();
+		 if(xueKeList.size() > 0){
+			 xueKeList.stream().forEach(xueKe1->{
+				 Map map = new HashMap();
+				 map.put("value",xueKe1.getId());
+				 map.put("text",xueKe1.getXkName());
+				 list1.add(map);
+			 });
+		 }
+		 result.setSuccess(true);
+		 result.setResult(list1);
+		 return result;
+	 }
 	
 	/**
 	  *   添加
@@ -77,6 +100,10 @@ public class XueKeController {
 	public Result<XueKe> add(@RequestBody XueKe xueKe) {
 		Result<XueKe> result = new Result<XueKe>();
 		try {
+
+
+
+
 			xueKeService.save(xueKe);
 			result.success("添加成功！");
 		} catch (Exception e) {

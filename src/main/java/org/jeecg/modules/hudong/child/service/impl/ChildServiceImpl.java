@@ -25,11 +25,6 @@ public class ChildServiceImpl extends ServiceImpl<ChildMapper, Child> implements
     private ChildMapper childMapper;
 
     @Override
-    public List<Map<String,String>> selectMsChild(String xxOpion, int week) {
-        return childMapper.selectMsChild(xxOpion,week);
-    }
-
-    @Override
     public List<Map<String, String>> selectMsgAndChild(String userid) {
         return childMapper.selectMsgAndChild(userid);
     }

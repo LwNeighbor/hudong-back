@@ -15,7 +15,5 @@ import java.util.Map;
  */
 public interface IChildService extends IService<Child> {
 
-    List<Map<String,String>> selectMsChild(String xxOpion, int week);
-
     List<Map<String, String>> selectMsgAndChild(String userid);
 }

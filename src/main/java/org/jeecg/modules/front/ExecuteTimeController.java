@@ -1,10 +1,16 @@
 package org.jeecg.modules.front;
 
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.jeecg.modules.hudong.child.entity.Child;
 import org.jeecg.modules.hudong.child.service.IChildService;
-import org.jeecg.modules.hudong.msm.entity.Msm;
-import org.jeecg.modules.hudong.msm.service.IMsmService;
+import org.jeecg.modules.hudong.kc.entity.Kc;
+import org.jeecg.modules.hudong.kc.service.IKcService;
+import org.jeecg.modules.hudong.mqx.entity.MqXQing;
+import org.jeecg.modules.hudong.mqx.service.IMqXQingService;
+import org.jeecg.modules.hudong.parent.entity.Parent;
+import org.jeecg.modules.hudong.parent.service.IParentService;
+import org.jeecg.modules.hudong.xtzc.service.IXtzcService;
 import org.jeecg.modules.hudong.xuexi.entity.XueXi;
 import org.jeecg.modules.hudong.xuexi.service.IXueXiService;
 import org.springframework.context.annotation.Configuration;
@@ -25,37 +31,123 @@ public class ExecuteTimeController {
     @Resource
     private IChildService childService;
     @Resource
-    private IMsmService msmService;
-    @Resource
     private IXueXiService xueXiService;
+    @Resource
+    private IMqXQingService mqXQingService;
+    @Resource
+    private IXtzcService xtzcService;
+    @Resource
+    private IKcService kcService;
+    @Resource
+    private IParentService parentService;
 
-    //3.添加定时任务
-    //或直接指定时间间隔，例如：5秒
+    /**
+     * 系统注册消息定时
+     */
     //@Scheduled(fixedRate=5000)
+    //每天8点
     @Scheduled(cron = "0 * * * * ? ")
     private void configureTasks() {
 
+        List<Child> list = childService.list();
+        list.stream().forEach(child -> {
+            Parent user = parentService.getById(child.getPtId());
+            String day = DateUtil.formatDate(new Date());
+            String dateTime = DateUtil.format(new Date(),"HH:mm");
+            //根据孩子的注册时间,查询相应的消息
+            Map<String,String> map = xtzcService.selectMsgByChildTime(child.getId(),day+" ");
+            if(map != null){
+                XueXi xueXi = new XueXi();
 
-        int week = DateUtil.dayOfWeek(new Date());
+                xueXi.setTxType("0");   //提醒方式
+                xueXi.setChPhone(child.getCdPhone());
+                xueXi.setChName(child.getCdName());
+                xueXi.setPtPhone(user.getPtPhone());
+                xueXi.setPtName(user.getPtName());
+                xueXi.setXxOpion(dateTime);
+                xueXi.setXxContent(String.valueOf(map.get("content")));
+                xueXi.setXxYtype("WZ");
+                xueXi.setXxVtype("XT");
+                xueXi.setXxChildId(child.getId());
+                xueXi.setXxParentId(user.getId());
 
-        String xxOpion = DateUtil.format(new Date(),"HH:mm");
-        List<Map<String, String>> mlist = childService.selectMsChild(xxOpion,week);
-
-        mlist.stream().forEach(map -> {
-
-            XueXi xue = new XueXi();
-            xue.setXxParentId(map.get("ptid"));
-            xue.setXxChildId(map.get("cid"));
-            xue.setXxYtype("WZ"); //发的是文字
-            xue.setXxOpion(map.get("xxopion"));
-            xue.setXxVtype("XT");
-            xue.setXxContent(map.get("content"));
-            xue.setXxMqId(map.get("mqid"));
-            xue.setXxKemu(map.get("kemu"));
-            xue.setTxType(map.get("txType"));
-            xueXiService.save(xue);
+                xueXiService.save(xueXi);
+            }
         });
     }
+
+    /**
+     * 学习,模式详情定时
+     */
+    @Scheduled(cron = "0 * * * * ? ")
+    private void configureTasks1() {
+
+        int week = DateUtil.dayOfWeek(new Date());      //当前星期几
+        String date = DateUtil.formatDate(new Date());
+        List<Child> list = childService.list();
+        for(Child child : list){
+            Parent parent = parentService.getById(child.getPtId());
+            //注册天数
+            long day = DateUtil.betweenDay(new Date(), child.getCreateTime(), true);
+
+            try{
+                //查询这个孩子这个时间点是什么课
+                Kc kc = kcService.getClassByChild(child.getId(), String.valueOf(week), date + " ");
+                if(kc == null){
+                    //按照number排序,查询开始时间大于当前时间的数据,选择第一个就是下一节课
+                    List<Kc> listKc = kcService.listOrderByNumberAsc(child.getId(), String.valueOf(week), date + " ");
+
+                    if(listKc.size() > 0){
+                        kc = listKc.get(0);
+                    }else {
+                        continue;
+                    }
+                }else {
+
+                    List<Kc> kcFirst = kcService.list(new QueryWrapper<Kc>().
+                            eq("ch_id", child.getId()).
+                            eq("weekday", week).
+                            eq("number", kc.getNumber()+1)
+                    );
+
+                    if(kcFirst.size() == 0){
+                        continue;
+                    }
+                    kc = kcFirst.get(0);
+                }
+
+                List<MqXQing> listmq = mqXQingService.getListByChildAndKc(String.valueOf(day),kc.getKmName(),child.getFlId());
+                for(MqXQing mqXQing : listmq){
+                    String mq_time = mqXQing.getMqTime();
+                    String format = DateUtil.format(DateUtil.offsetMinute(new Date(), Integer.parseInt(mq_time)), "HH:mm");
+                    if(format.equals(kc.getStartTime())){
+                        //说明就是现在,学习消息查询信息
+                        XueXi xueXi = new XueXi();
+                        xueXi.setTxType(mqXQing.getTxType());   //提醒方式
+                        xueXi.setChPhone(child.getCdPhone());
+                        xueXi.setChName(child.getCdName());
+                        xueXi.setPtPhone(parent.getPtPhone());
+                        xueXi.setPtName(parent.getPtName());
+                        xueXi.setXxKemu(kc.getKmName());
+                        xueXi.setXxOpion(format);
+                        xueXi.setXxContent(mqXQing.getMqContent());
+                        xueXi.setXxYtype("WZ");
+                        xueXi.setXxVtype("XT");
+                        xueXi.setXxChildId(child.getId());
+                        xueXi.setXxParentId(parent.getId());
+
+                        xueXiService.save(xueXi);
+                    }
+                }
+            }catch (Exception e){
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
 
 }
 

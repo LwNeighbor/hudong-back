@@ -17,6 +17,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.hudong.xk.entity.XueKe;
+import org.jeecg.modules.hudong.xk.service.IXueKeService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -43,6 +45,8 @@ import com.alibaba.fastjson.JSON;
 public class MqXQingController {
 	@Autowired
 	private IMqXQingService mqXQingService;
+	@Autowired
+	private IXueKeService xueKeService;
 	
 	/**
 	  * 分页列表查询
@@ -92,6 +96,13 @@ public class MqXQingController {
 	public Result<MqXQing> add(@RequestBody MqXQing mqXQing) {
 		Result<MqXQing> result = new Result<MqXQing>();
 		try {
+			try{
+				XueKe xu = xueKeService.getById(mqXQing.getMqKemu());
+				mqXQing.setMqKemu(xu.getXkName());
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+
 			mqXQingService.save(mqXQing);
 			result.success("添加成功！");
 		} catch (Exception e) {
@@ -114,6 +125,12 @@ public class MqXQingController {
 		if(mqXQingEntity==null) {
 			result.error500("未找到对应实体");
 		}else {
+			try{
+				XueKe xu = xueKeService.getById(mqXQing.getMqKemu());
+				mqXQing.setMqKemu(xu.getXkName());
+			}catch (Exception e){
+				e.printStackTrace();
+			}
 			boolean ok = mqXQingService.updateById(mqXQing);
 			//TODO 返回false说明什么？
 			if(ok) {
@@ -188,27 +205,25 @@ public class MqXQingController {
    */
   @RequestMapping(value = "/exportXls")
   public ModelAndView exportXls(HttpServletRequest request, HttpServletResponse response) {
-      // Step.1 组装查询条件
-      QueryWrapper<MqXQing> queryWrapper = null;
-      try {
-          String paramsStr = request.getParameter("paramsStr");
-          if (oConvertUtils.isNotEmpty(paramsStr)) {
-              String deString = URLDecoder.decode(paramsStr, "UTF-8");
-              MqXQing mqXQing = JSON.parseObject(deString, MqXQing.class);
-              queryWrapper = QueryGenerator.initQueryWrapper(mqXQing, request.getParameterMap());
-          }
-      } catch (UnsupportedEncodingException e) {
-          e.printStackTrace();
-      }
 
+	  // Step.1 组装查询条件
+	  QueryWrapper<MqXQing> queryWrapper = null;
+	  try {
+		  String paramsStr = request.getParameter("paramsStr");
+		  if (oConvertUtils.isNotEmpty(paramsStr)) {
+			  String deString = URLDecoder.decode(paramsStr, "UTF-8");
+			  MqXQing mq = JSON.parseObject(deString, MqXQing.class);
+		  }
+	  } catch (UnsupportedEncodingException e) {
+		  e.printStackTrace();
+	  }
       //Step.2 AutoPoi 导出Excel
       ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
-      List<MqXQing> pageList = mqXQingService.list(queryWrapper);
       //导出文件名称
       mv.addObject(NormalExcelConstants.FILE_NAME, "模式详情列表");
       mv.addObject(NormalExcelConstants.CLASS, MqXQing.class);
-      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("模式详情列表数据", "导出人:Jeecg", "导出信息"));
-      mv.addObject(NormalExcelConstants.DATA_LIST, pageList);
+      mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("模式详情列表数据", "提醒类型:0.静音. 1.响铃 2.震动 3.响铃加震动 导出人:雁飞留影", "导出信息"));
+      //mv.addObject(NormalExcelConstants.DATA_LIST, pageList);
       return mv;
   }
 
@@ -219,8 +234,9 @@ public class MqXQingController {
    * @param response
    * @return
    */
-  @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
+  @RequestMapping(value = "/importExcel/{nj}", method = RequestMethod.GET)
   public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
+      String nj = request.getParameter("nj");
       MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
       Map<String, MultipartFile> fileMap = multipartRequest.getFileMap();
       for (Map.Entry<String, MultipartFile> entity : fileMap.entrySet()) {
@@ -232,6 +248,7 @@ public class MqXQingController {
           try {
               List<MqXQing> listMqXQings = ExcelImportUtil.importExcel(file.getInputStream(), MqXQing.class, params);
               for (MqXQing mqXQingExcel : listMqXQings) {
+                  mqXQingExcel.setFlId(nj);
                   mqXQingService.save(mqXQingExcel);
               }
               return Result.ok("文件导入成功！数据行数：" + listMqXQings.size());

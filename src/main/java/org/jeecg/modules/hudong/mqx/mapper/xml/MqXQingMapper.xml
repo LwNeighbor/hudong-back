@@ -2,4 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.hudong.mqx.mapper.MqXQingMapper">
 
+    <select id="getListByChildAndKc" parameterType="String" resultType="org.jeecg.modules.hudong.mqx.entity.MqXQing">
+        select * from hd_mq_xiangqing where fl_id = #{flId} and mq_kemu=#{kmName} and register_day=#{day}
+    </select>
 </mapper>

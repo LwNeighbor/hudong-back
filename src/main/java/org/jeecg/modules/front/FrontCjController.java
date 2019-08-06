@@ -69,13 +69,16 @@ public class FrontCjController extends BaseController {
 
     @RequestMapping(value = "/xueke", method = RequestMethod.POST)
     @ApiOperation("学科")
-    public Result<JSONObject> xueke() {
+    public Result<JSONObject> xueke(@RequestParam("childid") String childid) {
 
         Result<JSONObject> result = new Result<JSONObject>();
 
         try {
 
-            List<XueKe> list = xueKeService.list();
+            Child child = childService.getById(childid);
+
+
+            List<XueKe> list = xueKeService.list(new QueryWrapper<XueKe>().eq("fl_id",child.getFlId()));
 
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("data", list);

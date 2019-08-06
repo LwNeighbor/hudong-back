@@ -11,7 +11,6 @@ import org.jeecg.modules.hudong.child.service.IChildService;
 import org.jeecg.modules.hudong.fd.entity.Fd;
 import org.jeecg.modules.hudong.fd.service.IFdService;
 import org.jeecg.modules.hudong.mqx.service.IMqXQingService;
-import org.jeecg.modules.hudong.msm.service.IMsmService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.jeecg.modules.hudong.xuexi.entity.XueXi;
 import org.jeecg.modules.hudong.xuexi.service.IXueXiService;
@@ -33,8 +32,6 @@ public class FrontXueXiController extends BaseController {
     private IMqXQingService mqXQingService;
     @Autowired
     private IChildService childService;
-    @Autowired
-    private IMsmService msmService;
     @Autowired
     private IFdService fdService;
 
@@ -327,33 +324,33 @@ public class FrontXueXiController extends BaseController {
         try {
             Parent user = verify(token);
             if (user != null) {
-
                 String time = DateUtil.format(new Date(), "yyyy-MM-dd");
-                List<XueXi> list = xueXiService.list(new QueryWrapper<XueXi>().
+                List<XueXi> list1 = xueXiService.list(new QueryWrapper<XueXi>().
                         eq("feedback", "N").
                         eq("xx_parent_id", user.getId()).
-                        eq("xx_vtype", "XT").
-                        eq("xx_child_id",childid).
-                        like("create_time", time + "%"));
+                        eq("xx_child_id", childid).
+                        ne("xx_vtype","JZ").
+                        like("create_time",time + "%").
+                        orderByAsc("create_time")
+                );
 
-
-                for(XueXi xueXi : list){
-                    XueXi xueXi1 = null;
-                    List<XueXi> list1 = xueXiService.list(new QueryWrapper<XueXi>().
-                            eq("feedback", "N").
-                            eq("xx_parent_id", user.getId()).
-                            eq("xx_child_id", childid).
-                            eq("xx_vtype","XT").
-                            like("create_time",time + "%").
-                            orderByAsc("create_time")
-                    );
-
-                    if(list1.size() > 0){
-                        xueXi1 = list1.get(0);
+                XueXi xueXi = null;
+                XueXi xueXi1 = null;
+                for(int i=0;i<list1.size();i++){
+                    xueXi = list1.get(i);
+                    if(xueXi.getXxVtype().equals("XT")){
+                        if((i+1) < list1.size()){
+                            if(list1.get(i+1).getXxVtype().equals("HZ")){
+                                xueXi1 = list1.get(i+1);
+                            }
+                        }
                         fdService.saveFdAndUpdateXuexi(xueXi,xueXi1,user,childid);
+                        xueXi = null;
+                        xueXi1 = null;
+                    }else {
+                        continue;
                     }
                 }
-
                 result.success("操作成功");
                 return result;
             } else {

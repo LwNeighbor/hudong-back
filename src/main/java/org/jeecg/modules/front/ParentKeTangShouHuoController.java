@@ -71,6 +71,7 @@ public class ParentKeTangShouHuoController extends BaseController {
                     );
 
                     jsonObject.put("xtxi", xtxiList);
+
                     String maxCreateTime = xueXiService.selectMaxCreateTime(child.getId());
                     if (maxCreateTime != null) {
                         maxCreateTime = maxCreateTime.substring(0, 10);
