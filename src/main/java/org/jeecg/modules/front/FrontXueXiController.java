@@ -56,13 +56,17 @@ public class FrontXueXiController extends BaseController {
 
                 Map map = new HashMap();
                 List<XueXi> list1 = xueXiService.list(new QueryWrapper<XueXi>().
-                        select("xx_opion","xx_kemu").
+                        select("xx_opion").
                         eq("xx_child_id", child.getId()).
                         like("create_time", DateUtils.formatDate(new Date())+"%").
                         orderByAsc("create_time").
-                        groupBy("xx_opion","xx_kemu"));
+                        groupBy("xx_opion"));
                 if(list1.size() > 0){
-                    xxOpion = list1.get(list1.size()-1).getXxOpion()+"="+list1.get(list1.size()-1).getXxKemu();
+                    if(list1.get(list1.size()-1).getXxKemu() == null){
+                        xxOpion = list1.get(list1.size()-1).getXxOpion() + "=" +" ";
+                    }else {
+                        xxOpion = list1.get(list1.size()-1).getXxOpion()+"="+list1.get(list1.size()-1).getXxKemu();
+                    }
                 }
 
                 for (XueXi xueXi : list1) {
@@ -126,11 +130,11 @@ public class FrontXueXiController extends BaseController {
                 Map map = new HashMap();
                 String date = DateUtils.formatDate(new Date());
                 List<XueXi> list1 = xueXiService.list(new QueryWrapper<XueXi>().
-                        select("xx_opion","xx_kemu").
+                        select("xx_opion").
                         eq("xx_child_id", child.getId()).
                         like("create_time", date+"%").
                         orderByAsc("create_time").
-                        groupBy("xx_opion","xx_kemu"));
+                        groupBy("xx_opion"));
                 if(list1.size() > 0){
                     xxOpion = list1.get(list1.size()-1).getXxOpion()+"="+list1.get(list1.size()-1).getXxKemu();
                 }

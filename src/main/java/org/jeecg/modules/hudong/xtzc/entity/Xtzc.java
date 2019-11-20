@@ -49,10 +49,11 @@ public class Xtzc implements Serializable {
 	/**消息简介*/
 	@Excel(name = "消息简介", width = 15)
 	private java.lang.String introduce;
-	/**消息内容*/
-	@Excel(name = "消息内容", width = 15)
-	private java.lang.Object content;
-	/**具体发送时间*/
-	@Excel(name = "具体发送时间", width = 15)
+	/**发送时间*/
+	@Excel(name = "发送时间", width = 15)
 	private java.lang.String sendTime;
+
+	private String type;
+
+	private String content;
 }

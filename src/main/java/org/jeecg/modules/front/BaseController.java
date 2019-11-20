@@ -1,5 +1,7 @@
 package org.jeecg.modules.front;
 
+import cn.hutool.core.codec.Base64Decoder;
+import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
@@ -22,6 +24,8 @@ import ws.schild.jave.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
@@ -144,13 +148,6 @@ public class BaseController {
     }
 
 
-    /**
-     * 上传IMG文件
-     *
-     * @param request
-     * @param response
-     * @return
-     */
     public String uploadImg(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String ctxPath = uploadpath;

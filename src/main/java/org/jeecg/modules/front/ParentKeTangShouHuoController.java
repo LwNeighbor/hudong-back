@@ -81,7 +81,7 @@ public class ParentKeTangShouHuoController extends BaseController {
                                 eq("xx_child_id", child.getId()).
                                 eq("xx_vtype", "HZ").
                                 like("create_time", maxCreateTime).
-                                groupBy("XX_OPION", "xx_kemu")
+                                groupBy("XX_OPION")
                         );
 
                         for (XueXi xueXi : list1) {
@@ -237,7 +237,7 @@ public class ParentKeTangShouHuoController extends BaseController {
                             eq("xx_child_id", child.getId()).
                             eq("xx_vtype", "HZ").
                             like("create_time", maxCreateTime).
-                            groupBy("XX_OPION", "xx_kemu")
+                            groupBy("XX_OPION")
                     );
 
                     for (XueXi xueXi : list1) {

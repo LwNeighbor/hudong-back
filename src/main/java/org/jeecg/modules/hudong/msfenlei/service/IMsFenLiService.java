@@ -11,4 +11,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IMsFenLiService extends IService<MsFenLi> {
 
+    int updateFenLiById(MsFenLi msFenLi);
 }

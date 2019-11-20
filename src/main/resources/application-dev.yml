@@ -1,5 +1,10 @@
 server:
   port: 8081
+  ssl:
+    key-store-password: q1dg2o34MG
+    key-store: classpath:fileauth.txt
+    key-store-type: PKCS12
+
 
   servlet:
     context-path: /jeecg-boot

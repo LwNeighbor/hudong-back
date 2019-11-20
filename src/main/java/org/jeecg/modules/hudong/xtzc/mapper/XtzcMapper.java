@@ -18,6 +18,6 @@ public interface XtzcMapper extends BaseMapper<Xtzc> {
 
 
     @Select("select * from hd_xt_zc zc where zc.ps_time=(select to_days(now())-to_days(hz.create_time) as tian " +
-            "from hd_child hz where hz.id = #{id}) and concat(#{day},zc.send_time) = sysdate()")
+            "from hd_child hz where hz.id = #{id}) and concat(#{day},zc.send_time) = sysdate() and zc.ps_time != '0'")
     Map<String, String> selectMsgByChildTime(String id,String day);
 }

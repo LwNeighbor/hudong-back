@@ -9,6 +9,8 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.util.DateUtils;
 import org.jeecg.modules.hudong.child.entity.Child;
 import org.jeecg.modules.hudong.child.service.IChildService;
+import org.jeecg.modules.hudong.kc.entity.Kc;
+import org.jeecg.modules.hudong.kc.service.IKcService;
 import org.jeecg.modules.hudong.liaotian.entity.LiaoTian;
 import org.jeecg.modules.hudong.liaotian.service.ILiaoTianService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
@@ -28,6 +30,7 @@ import java.util.*;
 @RequestMapping("/front/child")
 public class FrontChildController extends BaseController {
 
+    private static final String TOKEN_MARK = "CHILD_TOKEN";
 
     @Autowired
     private IChildService childService;
@@ -39,6 +42,8 @@ public class FrontChildController extends BaseController {
     private IParentService parentService;
     @Autowired
     private IXthfService xthfService;
+    @Autowired
+    private IKcService kcService;
 
 
     /**
@@ -106,7 +111,7 @@ public class FrontChildController extends BaseController {
             jsonObject.put("xxOpion",xxOpion);
             jsonObject.put("cavater",child.getChildAvater());
             jsonObject.put("pavater",user.getPtAvater());
-            jsonObject.put("favater","/plateform.png");
+            jsonObject.put("favater","/plateform1.png");
             result.setResult(jsonObject);
             result.success("操作成功");
             return result;
@@ -140,14 +145,27 @@ public class FrontChildController extends BaseController {
         String realContent = "-1";
         Result<JSONObject> result = new Result<JSONObject>();
         try {
-            String[] xxOpions = xxOpion.split("=");
+            String format = DateUtil.format(new Date(), "HH:mm");
+            String opion1 = null;
+            String opion2 = null;
+            if(!xxOpion.equals("-1")){
+                String[] xxOpions = xxOpion.split("=");
+                if(xxOpion.length() == 2){
+                    opion1 = xxOpions[0];
+                    opion2 = xxOpions[1];
+                }else {
+                    opion1 = format;
+                }
+            }
+
             Child child = childService.getById(childId);
+
             Parent user = parentService.getById(child.getPtId());
             xue.setXxParentId(child.getPtId());
             xue.setXxChildId(childId);
             xue.setXxYtype(type); //发的是文字
-            xue.setXxOpion(xxOpions[0]);
-            xue.setXxKemu(xxOpions[1]);
+            xue.setXxOpion(opion1);
+            xue.setXxKemu(opion2);
             xue.setXxVtype("HZ");
             xue.setPtName(user.getPtName());
             xue.setPtPhone(user.getPtPhone());
@@ -161,33 +179,47 @@ public class FrontChildController extends BaseController {
                 realContent = content;
                 //孩子发送OK消息,需要系统回复一个消息
                 long day = DateUtil.betweenDay(new Date(), child.getCreateTime(), true);    //孩子注册的第几天
-
-                List<Xthf> list = xthfService.list(new QueryWrapper<Xthf>().
-                        eq("ps_time", day).
-                        eq("kemu", xxOpions[1]).
-                        eq("grade", child.getFlId())
-                );
-
-                if(list.size() > 0){
-
-                    Xthf xthf = list.get(0);
-
-                    xueXi = new XueXi();
-                    xueXi.setTxType("0");   //提醒方式
-                    xueXi.setChPhone(child.getCdPhone());
-                    xueXi.setChName(child.getCdName());
-                    xueXi.setPtPhone(user.getPtPhone());
-                    xueXi.setPtName(user.getPtName());
-                    xueXi.setXxKemu(xxOpions[1]);
-                    xueXi.setXxOpion(xxOpions[0]);
-                    xueXi.setXxContent(String.valueOf(xthf.getContent()));
-                    xueXi.setXxYtype("WZ");
-                    xueXi.setXxVtype("XT");
-                    xueXi.setXxChildId(child.getId());
-                    xueXi.setXxParentId(user.getId());
-
+                int week = DateUtil.dayOfWeek(new Date());      //当前星期几
+                if(week == 1){
+                    week = 7;   //==1时代表周日,现在要给改成数字
+                }else{
+                    week -= 1;  // 每个数字减一才能代表课表上的周
                 }
+                String date = DateUtil.formatDate(new Date());
+                List<Kc> kcList = kcService.getClassByChild(child.getId(), String.valueOf(week), date + " ");
+                if(kcList.size() == 1){
+                    Kc kc = kcList.get(0);
+                    List<Xthf> list = xthfService.list(new QueryWrapper<Xthf>().
+                            eq("ps_time", day).
+                            eq("kemu", kc.getKmName()).
+                            eq("grade", child.getFlId()).
+                            eq("introduce","OK")
+                    );
 
+                    if(list.size() > 0){
+                        Xthf xthf = list.get(0);
+                        xueXi = new XueXi();
+                        xueXi.setTxType("0");   //提醒方式
+                        xueXi.setChPhone(child.getCdPhone());
+                        xueXi.setChName(child.getCdName());
+                        xueXi.setPtPhone(user.getPtPhone());
+                        xueXi.setPtName(user.getPtName());
+                        xueXi.setXxOpion(opion1);
+                        xueXi.setXxKemu(kc.getKmName());
+                        xueXi.setXxContent(String.valueOf(xthf.getContent()));
+                        if("0".equals(xthf.getType())){
+                            xueXi.setXxYtype("WZ");
+                        }
+                        if("1".equals(xthf.getType())){
+                            xueXi.setXxYtype("IMG");
+                        }
+                        xueXi.setXxVtype("XT");
+                        xueXi.setXxChildId(child.getId());
+                        xueXi.setXxParentId(user.getId());
+                    }
+
+                    xue.setXxKemu(kc.getKmName());
+                }
             } else if (type.equalsIgnoreCase("YY")) {
                 String upload = uploadYY(request, response);
                 xue.setXxContent("sys/common/view/"+ upload);
@@ -196,6 +228,50 @@ public class FrontChildController extends BaseController {
                     xue.setYyTime(time);
                 }
                 realContent = "sys/common/view/"+ upload;
+
+                //孩子发送OK消息,需要系统回复一个消息
+                long day = DateUtil.betweenDay(new Date(), child.getCreateTime(), true);    //孩子注册的第几天
+                int week = DateUtil.dayOfWeek(new Date());      //当前星期几
+                if(week == 1){
+                    week = 7;   //==1时代表周日,现在要给改成数字
+                }else{
+                    week -= 1;  // 每个数字减一才能代表课表上的周
+                }
+                String date = DateUtil.formatDate(new Date());
+                List<Kc> kcList = kcService.getClassByChild(child.getId(), String.valueOf(week), date + " ");
+                if(kcList.size() == 1){
+                    Kc kc = kcList.get(0);
+                    List<Xthf> list = xthfService.list(new QueryWrapper<Xthf>().
+                            eq("ps_time", day).
+                            eq("kemu", kc.getKmName()).
+                            eq("grade", child.getFlId()).
+                            eq("introduce","YY")
+                    );
+
+                    if(list.size() > 0){
+                        Xthf xthf = list.get(0);
+                        xueXi = new XueXi();
+                        xueXi.setTxType("0");   //提醒方式
+                        xueXi.setChPhone(child.getCdPhone());
+                        xueXi.setChName(child.getCdName());
+                        xueXi.setPtPhone(user.getPtPhone());
+                        xueXi.setPtName(user.getPtName());
+                        xueXi.setXxOpion(opion1);
+                        xueXi.setXxKemu(kc.getKmName());
+                        xueXi.setXxContent(String.valueOf(xthf.getContent()));
+                        if("0".equals(xthf.getType())){
+                            xueXi.setXxYtype("WZ");
+                        }
+                        if("1".equals(xthf.getType())){
+                            xueXi.setXxYtype("IMG");
+                        }
+                        xueXi.setXxVtype("XT");
+                        xueXi.setXxChildId(child.getId());
+                        xueXi.setXxParentId(user.getId());
+                    }
+                    xue.setXxKemu(kc.getKmName());
+                }
+
             }else if(type.equalsIgnoreCase("IMG")){
                 String upload = uploadImg(request, response);
                 xue.setXxContent("sys/common/view/"+ upload);
@@ -204,15 +280,60 @@ public class FrontChildController extends BaseController {
                     xue.setYyTime(time);
                 }
                 realContent = "sys/common/view/"+ upload;
+
+                //孩子发送OK消息,需要系统回复一个消息
+                long day = DateUtil.betweenDay(new Date(), child.getCreateTime(), true);    //孩子注册的第几天
+                int week = DateUtil.dayOfWeek(new Date());      //当前星期几
+                if(week == 1){
+                    week = 7;   //==1时代表周日,现在要给改成数字
+                }else{
+                    week -= 1;  // 每个数字减一才能代表课表上的周
+                }
+                String date = DateUtil.formatDate(new Date());
+                List<Kc> kcList = kcService.getClassByChild(child.getId(), String.valueOf(week), date + " ");
+                if(kcList.size() == 1){
+                    Kc kc = kcList.get(0);
+                    List<Xthf> list = xthfService.list(new QueryWrapper<Xthf>().
+                            eq("ps_time", day).
+                            eq("kemu", kc.getKmName()).
+                            eq("grade", child.getFlId()).
+                            eq("introduce","IMG")
+                    );
+
+                    if(list.size() > 0){
+                        Xthf xthf = list.get(0);
+                        xueXi = new XueXi();
+                        xueXi.setTxType("0");   //提醒方式
+                        xueXi.setChPhone(child.getCdPhone());
+                        xueXi.setChName(child.getCdName());
+                        xueXi.setPtPhone(user.getPtPhone());
+                        xueXi.setPtName(user.getPtName());
+                        xueXi.setXxOpion(opion1);
+                        xueXi.setXxKemu(kc.getKmName());
+                        xueXi.setXxContent(String.valueOf(xthf.getContent()));
+                        if("0".equals(xthf.getType())){
+                            xueXi.setXxYtype("WZ");
+                        }
+                        if("1".equals(xthf.getType())){
+                            xueXi.setXxYtype("IMG");
+                        }
+                        xueXi.setXxVtype("XT");
+                        xueXi.setXxChildId(child.getId());
+                        xueXi.setXxParentId(user.getId());
+                    }
+
+                    xue.setXxKemu(kc.getKmName());
+                }
             }
 
             if(xueXiService.save(xue)){
                 Thread.sleep(1000);
-                xueXiService.save(xueXi);
+                if(xueXi != null){
+                  xueXiService.save(xueXi);
+                }
             }
 
             JSONObject jsonObject = new JSONObject();
-
             jsonObject.put("content", realContent);
             jsonObject.put("cavater",child.getChildAvater());
             result.setResult(jsonObject);
@@ -248,7 +369,7 @@ public class FrontChildController extends BaseController {
             jsonObject.put("content", list);
             jsonObject.put("pavater",user.getPtAvater());
             jsonObject.put("cavater",child.getChildAvater());
-            jsonObject.put("favater","/plateform.png");
+            jsonObject.put("favater","/plateform1.png");
             result.setResult(jsonObject);
             result.success("操作成功");
             return result;
@@ -364,11 +485,12 @@ public class FrontChildController extends BaseController {
 
             for(String date : timeList) {
                 List<XueXi> list1 = xueXiService.list(new QueryWrapper<XueXi>().
-                        select("xx_opion","xx_kemu").
+                        select("xx_opion").
                         eq("xx_child_id", child.getId()).
                         eq("xx_vtype","HZ").
                         like("create_time", date+"%").
-                        groupBy("XX_OPION","xx_kemu")
+                        groupBy("XX_OPION").
+                        orderByAsc("create_time")
                 );
 
                 for(XueXi xueXi : list1){
@@ -382,7 +504,7 @@ public class FrontChildController extends BaseController {
                                     orderByAsc("create_time")
                     );
 
-                    map1.put("key", date + " "+ xueXi.getXxOpion()+" "+xueXi.getXxKemu());
+                    map1.put("key", date + " "+ xueXi.getXxOpion());
                     map1.put("value", list2);
                     slist.add(map1);
                 }

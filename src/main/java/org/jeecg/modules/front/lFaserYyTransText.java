@@ -1,6 +1,7 @@
 package org.jeecg.modules.front;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -9,6 +10,7 @@ import com.iflytek.msp.cpdb.lfasr.client.LfasrClientImp;
 import com.iflytek.msp.cpdb.lfasr.model.LfasrType;
 import com.iflytek.msp.cpdb.lfasr.model.Message;
 import com.iflytek.msp.cpdb.lfasr.model.ProgressStatus;
+import com.iflytek.msp.cpdb.lfasr.util.PropConfig;
 import org.jeecg.common.api.vo.Result;
 
 /**
@@ -49,7 +51,6 @@ public class lFaserYyTransText {
         try {
             lc = LfasrClientImp.initLfasrClient();
             String path = local_file_prefix + filePath;
-            System.out.println(path);
             // 上传音频文件
             Message uploadMsg = lc.lfasrUpload(path, type, params);
 
@@ -59,6 +60,7 @@ public class lFaserYyTransText {
                 // 创建任务成功
                 task_id = uploadMsg.getData();
             } else {
+                System.out.println("上传失败：====" + uploadMsg.getFailed());
                 // 创建任务失败-服务端异常
                 jsonObject.put("ecode",uploadMsg.getErr_no());
                 jsonObject.put("failed",uploadMsg.getFailed());
@@ -73,6 +75,7 @@ public class lFaserYyTransText {
 
                 // 如果返回状态不等于0，则任务失败
                 if (progressMsg.getOk() != 0) {
+                    System.out.println("进度失败");
                     jsonObject.put("ecode",progressMsg.getErr_no());
                     jsonObject.put("failed",progressMsg.getFailed());
                     result.setResult(jsonObject);
@@ -99,6 +102,7 @@ public class lFaserYyTransText {
                 JSONObject jsonObject1 = jsonArray.getJSONObject(0);
                 text = (String) jsonObject1.get("onebest");
             } else {
+                System.out.println("获取任务失败");
                 // 获取任务结果失败
                 jsonObject.put("ecode",resultMsg.getErr_no());
                 jsonObject.put("failed",resultMsg.getFailed());
@@ -109,6 +113,7 @@ public class lFaserYyTransText {
 
 
         } catch (Exception e) {
+            System.out.println("初始化异常");
             // 初始化异常，解析异常描述信息
             Message initMsg = JSON.parseObject(e.getMessage(), Message.class);
             jsonObject.put("ecode",initMsg.getErr_no());

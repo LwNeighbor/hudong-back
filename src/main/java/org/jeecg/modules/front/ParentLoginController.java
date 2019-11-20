@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/front/parent/home")
@@ -38,6 +39,16 @@ public class ParentLoginController extends BaseController {
     private ILiaoTianService liaoTianService;
     @Autowired
     private IChildService childService;
+
+
+
+    //TODO 临时
+    @GetMapping("/mark")
+    @ApiOperation("发送短信")
+    public Result mark() {
+        return Result.ok(0);
+    }
+
 
 
     /**
@@ -252,10 +263,12 @@ public class ParentLoginController extends BaseController {
             if (user != null) {
                 int xCount = xueXiService.count(new QueryWrapper<XueXi>().
                         eq("XX_PARENT_ID", user.getId()).
+                        like("create_time", DateUtils.formatDate(new Date())+"%").
                         eq("XX_READ", "N"));
 
                 int lCount = liaoTianService.count(new QueryWrapper<LiaoTian>().
                         eq("LT_PT_ID", user.getId()).
+                        like("create_time",DateUtils.formatDate(new Date())+"%").
                         eq("LT_READ", "N")
                 );
 

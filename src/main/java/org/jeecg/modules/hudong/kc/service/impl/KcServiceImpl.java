@@ -23,7 +23,7 @@ public class KcServiceImpl extends ServiceImpl<KcMapper, Kc> implements IKcServi
     @Autowired
     private KcMapper kcMapper;
     @Override
-    public Kc getClassByChild(String childid,String week, String date) {
+    public List<Kc> getClassByChild(String childid,String week, String date) {
         return kcMapper.getClassByChild(childid,week,date);
     }
 
@@ -31,4 +31,5 @@ public class KcServiceImpl extends ServiceImpl<KcMapper, Kc> implements IKcServi
     public List<Kc> listOrderByNumberAsc(String childid, String week, String date) {
         return kcMapper.listOrderByNumberAsc(childid,week,date);
     }
+
 }

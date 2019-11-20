@@ -24,12 +24,9 @@ public class HdExcel implements Serializable {
 	/**id*/
 	@TableId(type = IdType.UUID)
 	private String id;
-	/**年级名称*/
-	@Excel(name = "年级名称", width = 15)
-	private String flName;
-	/**年级id*/
-	@Excel(name = "年级id", width = 15)
-	private String flId;
+	/**备注*/
+	@Excel(name = "备注", width = 15)
+	private String remark;
 	/**模版路径*/
 	@Excel(name = "模版路径", width = 15)
 	private String excelAddress;

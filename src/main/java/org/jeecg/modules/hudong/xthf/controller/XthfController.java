@@ -70,6 +70,7 @@ public class XthfController {
 		Result<IPage<Xthf>> result = new Result<IPage<Xthf>>();
 		QueryWrapper<Xthf> queryWrapper = QueryGenerator.initQueryWrapper(xthf, req.getParameterMap());
 		Page<Xthf> page = new Page<Xthf>(pageNo, pageSize);
+		queryWrapper.orderByAsc("ps_time");
 		IPage<Xthf> pageList = xthfService.page(page, queryWrapper);
 		result.setSuccess(true);
 		result.setResult(pageList);
@@ -85,7 +86,6 @@ public class XthfController {
 	public Result<Xthf> add(@RequestBody Xthf xthf) {
 		Result<Xthf> result = new Result<Xthf>();
 		try {
-
 			String flId = xthf.getGrade();	//年级
 			MsFenLi fenLi = msFenLiService.getById(flId);
 			xthf.setGradeName(fenLi.getFlName());
@@ -117,7 +117,8 @@ public class XthfController {
 			String flId = xthf.getGrade();	//年级
 			if(!flId.equals("-1")){
 				MsFenLi fenLi = msFenLiService.getById(flId);
-				xthf.setGrade(fenLi.getFlName());
+				xthf.setGrade(fenLi.getId());
+				xthf.setGradeName(fenLi.getFlName());
 			}else {
 				xthf.setGrade(xthfEntity.getGrade());
 			}
@@ -247,6 +248,9 @@ public class XthfController {
           try {
               List<Xthf> listXthfs = ExcelImportUtil.importExcel(file.getInputStream(), Xthf.class, params);
               for (Xthf xthfExcel : listXthfs) {
+
+
+
                   xthfService.save(xthfExcel);
               }
               return Result.ok("文件导入成功！数据行数：" + listXthfs.size());

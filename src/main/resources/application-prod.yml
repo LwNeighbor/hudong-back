@@ -1,9 +1,10 @@
 server:
   port: 8080
   ssl:
-    key-store-password: gJ3SGjsI
-    key-store: classpath:hd.pfx
+    key-store-password: 540gDxoiRI
+    key-store: classpath:app.cxczcy.net.pfx
     key-store-type: PKCS12
+
 
   servlet:
     context-path: /jeecg-boot

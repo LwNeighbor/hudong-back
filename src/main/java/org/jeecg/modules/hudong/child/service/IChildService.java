@@ -15,5 +15,7 @@ import java.util.Map;
  */
 public interface IChildService extends IService<Child> {
 
-    List<Map<String, String>> selectMsgAndChild(String userid);
+    List<Map<String, String>> selectMsgAndChild(String userid,String date);
+
+    void updateNameAndKcById(Child child);
 }

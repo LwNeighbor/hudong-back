@@ -14,7 +14,8 @@ import java.util.Map;
  */
 public interface IKcService extends IService<Kc> {
 
-    Kc getClassByChild(String childid,String week, String date);
+    List<Kc> getClassByChild(String childid,String week, String date);
 
     List<Kc> listOrderByNumberAsc(String id, String valueOf, String s);
+
 }

@@ -97,14 +97,24 @@ public class MsFenLiController {
 	 */
 	@PutMapping(value = "/edit")
 	public Result<MsFenLi> edit(@RequestBody MsFenLi msFenLi) {
+
+		//需要修改孩子
+		//修改学科
+		//课程
+		//系统回复OK
+
+
 		Result<MsFenLi> result = new Result<MsFenLi>();
 		MsFenLi msFenLiEntity = msFenLiService.getById(msFenLi.getId());
 		if(msFenLiEntity==null) {
 			result.error500("未找到对应实体");
 		}else {
-			boolean ok = msFenLiService.updateById(msFenLi);
+
+			int i = msFenLiService.updateFenLiById(msFenLi);
+
+			//boolean ok = msFenLiService.updateById(msFenLi);
 			//TODO 返回false说明什么？
-			if(ok) {
+			if(i > 0) {
 				result.success("修改成功!");
 			}
 		}

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.swagger.annotations.ApiOperation;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.constant.CommonConstant;
+import org.jeecg.common.util.DateUtils;
 import org.jeecg.common.util.FileUtils;
 import org.jeecg.common.util.RedisUtil;
 import org.jeecg.modules.hudong.aboutUs.entity.AboutUs;
@@ -19,12 +20,20 @@ import org.jeecg.modules.hudong.feedback.entity.Feedback;
 import org.jeecg.modules.hudong.feedback.service.IFeedbackService;
 import org.jeecg.modules.hudong.kc.entity.Kc;
 import org.jeecg.modules.hudong.kc.service.IKcService;
+import org.jeecg.modules.hudong.mqx.entity.MqXQing;
+import org.jeecg.modules.hudong.mqx.service.IMqXQingService;
 import org.jeecg.modules.hudong.msfenlei.entity.MsFenLi;
 import org.jeecg.modules.hudong.msfenlei.service.IMsFenLiService;
 import org.jeecg.modules.hudong.parent.entity.Parent;
 import org.jeecg.modules.hudong.parent.service.IParentService;
 import org.jeecg.modules.hudong.qu.entity.Question;
 import org.jeecg.modules.hudong.qu.service.IQuestionService;
+import org.jeecg.modules.hudong.xthf.entity.Xthf;
+import org.jeecg.modules.hudong.xthf.service.IXthfService;
+import org.jeecg.modules.hudong.xtzc.entity.Xtzc;
+import org.jeecg.modules.hudong.xtzc.service.IXtzcService;
+import org.jeecg.modules.hudong.xuexi.entity.XueXi;
+import org.jeecg.modules.hudong.xuexi.service.IXueXiService;
 import org.jeecg.modules.shiro.authc.util.JwtUtil;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
@@ -71,6 +80,14 @@ public class ParentVipCenterController extends BaseController {
     private IKcService kcService;
     @Autowired
     private IMsFenLiService fenLiService;
+    @Autowired
+    private IMqXQingService xQingService;
+    @Autowired
+    private IXthfService xthfService;
+    @Autowired
+    private IXtzcService xtzcService;
+    @Autowired
+    private IXueXiService xueXiService;
 
 
     @PostMapping(value = "")
@@ -271,11 +288,12 @@ public class ParentVipCenterController extends BaseController {
 
                 List<Map<String,String>> ptList = new ArrayList<>();
 
-                List<Map<String,String>> list = childService.selectMsgAndChild(user.getId());
+                List<Map<String,String>> list = childService.selectMsgAndChild(user.getId(), DateUtils.formatDate(new Date())+"%");
                 list.stream().forEach(map -> {
                     Map map1 = new HashMap();
 
-                    map1.put("count",map.get("count"));
+                    map1.put("count",map.get("count")); //学习的未读消息
+                    map1.put("lcount",map.get("lcount"));
                     map1.put("id",map.get("id"));
                     map1.put("ptId",map.get("ptId"));
                     map1.put("cdName",map.get("cdName"));
@@ -364,7 +382,28 @@ public class ParentVipCenterController extends BaseController {
                     child.setChildAvater("/child.png");
                     child.setFlId(flId);
                     child.setFlName(flName);
-                    childService.save(child);
+                    if(childService.save(child)){
+                        //直接发一条注册成功的系统消息
+                        List<Xtzc> ps_time = xtzcService.list(new QueryWrapper<Xtzc>().eq("ps_time", '0'));
+                        if(ps_time.size() > 0){
+                            String dateTime = DateUtil.format(new Date(),"HH:mm");
+                            XueXi xueXi = new XueXi();
+
+                            xueXi.setTxType("0");   //提醒方式
+                            xueXi.setChPhone(child.getCdPhone());
+                            xueXi.setChName(child.getCdName());
+                            xueXi.setPtPhone(user.getPtPhone());
+                            xueXi.setPtName(user.getPtName());
+                            xueXi.setXxOpion(dateTime);
+                            xueXi.setXxContent(String.valueOf(ps_time.get(0).getContent()));
+                            xueXi.setXxYtype("WZ");
+                            xueXi.setXxVtype("XT");
+                            xueXi.setXxChildId(child.getId());
+                            xueXi.setXxParentId(user.getId());
+
+                            xueXiService.save(xueXi);
+                        }
+                    }
                     result.success("操作成功");
                     return result;
                 } else {
@@ -419,10 +458,9 @@ public class ParentVipCenterController extends BaseController {
         try {
             Parent user = verify(token);
             if (user != null) {
-                Child child = new Child();
-                child.setId(id);
+                Child child = childService.getById(id);
                 child.setCdName(name);
-                childService.updateById(child);
+                childService.updateNameAndKcById(child);
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("data", name);
                 result.setResult(jsonObject);
@@ -567,7 +605,7 @@ public class ParentVipCenterController extends BaseController {
                 String ctoken = JwtUtil.sign(byId.getCdPhone(), byId.getCdPassword());
                 redisUtil.del(CommonConstant.PREFIX_FRONT_USER_TOKEN+ctoken);
                 byId.setCdPhone(phone);
-                childService.updateById(byId);
+                childService.updateNameAndKcById(byId);
                 result.success("操作成功");
                 return result;
             } else {
@@ -842,10 +880,7 @@ public class ParentVipCenterController extends BaseController {
                         kcExcel.setPhone(child.getCdPhone());
                         kcExcel.setFlId(child.getFlId());
                         kcExcel.setFlName(child.getFlName());
-                        int weekday = kcWeel + 1;
-                        if(weekday == 8){
-                            weekday=1;
-                        }
+                        int weekday = kcWeel;
 
                         kcExcel.setWeekday(String.valueOf(weekday));
                         kcService.save(kcExcel);
@@ -916,4 +951,109 @@ public class ParentVipCenterController extends BaseController {
     }
 
 
+
+    /**
+     * 通过excel导入数据
+     *
+     * @param request
+     * @param response
+     * @return
+     */
+    @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
+    public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
+        String nj = request.getHeader("fiId");
+        MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+        Map<String, MultipartFile> fileMap = multipartRequest.getFileMap();
+        for (Map.Entry<String, MultipartFile> entity : fileMap.entrySet()) {
+            MultipartFile file = entity.getValue();// 获取上传文件对象
+            ImportParams params = new ImportParams();
+            params.setTitleRows(2);
+            params.setHeadRows(1);
+            params.setNeedSave(true);
+            try {
+                List<MqXQing> listMqXQings = ExcelImportUtil.importExcel(file.getInputStream(), MqXQing.class, params);
+                for (MqXQing mqXQingExcel : listMqXQings) {
+                    mqXQingExcel.setFlId(nj);
+                    xQingService.save(mqXQingExcel);
+                }
+                return Result.ok("文件导入成功！数据行数：" + listMqXQings.size());
+            } catch (Exception e) {
+                return Result.error("文件导入失败！");
+            } finally {
+                try {
+                    file.getInputStream().close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return Result.ok("文件导入失败！");
+    }
+
+
+    /**
+     * 通过excel导入数据
+     *
+     * @param request
+     * @param response
+     * @return
+     */
+    @RequestMapping(value = "/importExcelXthf", method = RequestMethod.POST)
+    public Result<?> importExcelXthf(HttpServletRequest request, HttpServletResponse response) {
+        MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+        Map<String, MultipartFile> fileMap = multipartRequest.getFileMap();
+        for (Map.Entry<String, MultipartFile> entity : fileMap.entrySet()) {
+            MultipartFile file = entity.getValue();// 获取上传文件对象
+            ImportParams params = new ImportParams();
+            params.setTitleRows(2);
+            params.setHeadRows(1);
+            params.setNeedSave(true);
+            try {
+                List<Xthf> xthfList = ExcelImportUtil.importExcel(file.getInputStream(), Xthf.class, params);
+                for (Xthf xthf : xthfList) {
+                    xthf.setType("0");  //默认导入的数据类型都是文字
+                    String gradeName = xthf.getGradeName();
+                    List<MsFenLi> fl_name = fenLiService.list(new QueryWrapper<MsFenLi>().eq("fl_name", gradeName));
+                    if(fl_name.size() > 0){
+                        MsFenLi fenLi = fl_name.get(0);
+                        xthf.setGrade(fenLi.getId());
+                        xthfService.save(xthf);
+                    }else {
+                        return Result.error("未找到该年级==="+gradeName);
+                    }
+
+                }
+                return Result.ok("文件导入成功！数据行数：" + xthfList.size());
+            } catch (Exception e) {
+                return Result.error("文件导入失败！");
+            } finally {
+                try {
+                    file.getInputStream().close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return Result.ok("文件导入失败！");
+    }
+
+
+    @RequestMapping("/uploadTinyImg")
+    public Result<?> uploadTinyImg(HttpServletRequest request, HttpServletResponse response) {
+
+        Result<Object> result = new Result<Object>();
+
+        try {
+            String path = uploadImg(request, response);
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("url","/sys/common/view/"+path);
+            result.setResult(jsonObject);
+            result.success("操作成功");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
 }

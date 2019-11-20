@@ -64,6 +64,7 @@ public class MqXQingController {
 		Result<IPage<MqXQing>> result = new Result<IPage<MqXQing>>();
 		QueryWrapper<MqXQing> queryWrapper = QueryGenerator.initQueryWrapper(mqXQing, req.getParameterMap());
 		Page<MqXQing> page = new Page<MqXQing>(pageNo, pageSize);
+		queryWrapper.orderByAsc("register_day");
 		IPage<MqXQing> pageList = mqXQingService.page(page, queryWrapper);
 		result.setSuccess(true);
 		result.setResult(pageList);
@@ -80,6 +81,7 @@ public class MqXQingController {
 	 public Result<List<MqXQing>> inlineList(MqXQing mqXQing,HttpServletRequest req) {
 		 Result<List<MqXQing>> result = new Result<List<MqXQing>>();
 		 QueryWrapper<MqXQing> queryWrapper = QueryGenerator.initQueryWrapper(mqXQing, req.getParameterMap());
+		 queryWrapper.orderByAsc("register_day");
 		 List<MqXQing> pageList = mqXQingService.list(queryWrapper);
 		 result.setSuccess(true);
 		 result.setResult(pageList);
@@ -227,44 +229,7 @@ public class MqXQingController {
       return mv;
   }
 
-  /**
-      * 通过excel导入数据
-   *
-   * @param request
-   * @param response
-   * @return
-   */
-  @RequestMapping(value = "/importExcel/{nj}", method = RequestMethod.GET)
-  public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
-      String nj = request.getParameter("nj");
-      MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
-      Map<String, MultipartFile> fileMap = multipartRequest.getFileMap();
-      for (Map.Entry<String, MultipartFile> entity : fileMap.entrySet()) {
-          MultipartFile file = entity.getValue();// 获取上传文件对象
-          ImportParams params = new ImportParams();
-          params.setTitleRows(2);
-          params.setHeadRows(1);
-          params.setNeedSave(true);
-          try {
-              List<MqXQing> listMqXQings = ExcelImportUtil.importExcel(file.getInputStream(), MqXQing.class, params);
-              for (MqXQing mqXQingExcel : listMqXQings) {
-                  mqXQingExcel.setFlId(nj);
-                  mqXQingService.save(mqXQingExcel);
-              }
-              return Result.ok("文件导入成功！数据行数：" + listMqXQings.size());
-          } catch (Exception e) {
-              log.error(e.getMessage());
-              return Result.error("文件导入失败！");
-          } finally {
-              try {
-                  file.getInputStream().close();
-              } catch (IOException e) {
-                  e.printStackTrace();
-              }
-          }
-      }
-      return Result.ok("文件导入失败！");
-  }
+
 
 
 

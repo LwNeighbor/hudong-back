@@ -54,6 +54,7 @@ public class Child implements Serializable {
 	/**登录密码*/
 	@Excel(name = "登录密码", width = 15)
 	private java.lang.String cdPassword;
+
 	/**创建人*/
 	@Excel(name = "创建人", width = 15)
 	private java.lang.String createBy;

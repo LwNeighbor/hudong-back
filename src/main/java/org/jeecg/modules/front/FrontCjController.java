@@ -153,23 +153,24 @@ public class FrontCjController extends BaseController {
 
                 List<Child> childList = childService.list(new QueryWrapper<Child>().eq("pt_id", user.getId()));
 
-                List<XueKe> xueKeList = xueKeService.list();
+
 
                 List<Cj> list = new ArrayList<>();
-
+                List<XueKe> xueKeList = new ArrayList<>();
                 //默认就是周
-                if (childList.size() > 0 && xueKeList.size() > 0) {
+                if (childList.size() > 0) {
                     //说明查询的是周
                     String begin = DateUtils.formatDate(DateUtil.offsetDay(new Date(), -7));
                     String now = DateUtils.formatDate(new Date());
+                    Child child = childList.get(0);
 
-                    list = cjService.list(new QueryWrapper<Cj>().eq("cj_cd_id", childList.get(0).getId()).
+                    xueKeList = xueKeService.list(new QueryWrapper<XueKe>().eq("fl_id",child.getFlId()));
+                    list = cjService.list(new QueryWrapper<Cj>().eq("cj_cd_id", child.getId()).
                             eq("cj_xk_id", xueKeList.get(0).getId()).
                             orderByAsc("cj_time").
                             between("cj_time", begin, now)
                     );
                 }
-
 
                 list.stream().forEach(cj -> {
 
