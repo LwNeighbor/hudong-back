@@ -1,5 +1,7 @@
 server:
   port: 8080
+  http:
+    port: 8081
   ssl:
     key-store-password: 540gDxoiRI
     key-store: classpath:app.cxczcy.net.pfx
